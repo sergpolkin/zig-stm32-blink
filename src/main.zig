@@ -1,19 +1,18 @@
-// Blue Pill STM32F103C8T6
-
-const GPIOC_BASE = 0x4001_1000;
-
-const GPIOC_CRL = @intToPtr(*volatile u32, GPIOC_BASE + 0x00);
-const GPIOC_CRH = @intToPtr(*volatile u32, GPIOC_BASE + 0x04);
-
-const GPIOC_IDR = @intToPtr(*volatile u32, GPIOC_BASE + 0x08);
-const GPIOC_ODR = @intToPtr(*volatile u32, GPIOC_BASE + 0x0C);
-
-const GPIOC_BSRR = @intToPtr(*volatile u32, GPIOC_BASE + 0x10);
-const GPIOC_BRR = @intToPtr(*volatile u32, GPIOC_BASE + 0x14);
+const regs = @import("registers.zig");
 
 pub fn main() noreturn {
+    // Set pin 13 mode to general purpose output
+    regs.GPIOC.CRH.modify(.{ .MODE13 = 0b10, .CNF13 = 0b00, });
+
+    // Reset pin 13 (LED on)
+    regs.GPIOC.BRR.modify(.{ .BR13 = 1, });
+
     while (true) {
-        GPIOC_ODR.* ^= 1 << 13;
+        // Read the LED state
+        const leds_state = regs.GPIOC.ODR.read();
+        // Set the LED output to the negation of the currrent output
+        regs.GPIOC.ODR.modify(.{ .ODR13 = ~leds_state.ODR13, });
+
         // Sleep for some time
         var i: u32 = 0;
         while (i < 600000) : (i +%= 1) {
