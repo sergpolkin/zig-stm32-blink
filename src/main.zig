@@ -1,21 +1,38 @@
-const regs = @import("registers.zig");
+const PERIPH_BASE = 0x40000000;
+const PERIPH_BASE_APB1 = PERIPH_BASE + 0x00000;
+const PERIPH_BASE_APB2 = PERIPH_BASE + 0x10000;
+const PERIPH_BASE_AHB  = PERIPH_BASE + 0x18000;
 
-pub fn main() noreturn {
-    // Set pin 13 mode to general purpose output
-    regs.GPIOC.CRH.modify(.{ .MODE13 = 0b10, .CNF13 = 0b00, });
+const GPIO_PORT_C_BASE = PERIPH_BASE_APB2 + 0x1000;
 
-    // Reset pin 13 (LED on)
-    regs.GPIOC.BRR.modify(.{ .BR13 = 1, });
+fn GPIO(comptime base: usize) type {
+    return struct {
+        // Port configuration
+        const CRL = @intToPtr(*volatile u32, base + 0x00);
+        const CRH = @intToPtr(*volatile u32, base + 0x04);
+        // Port input
+        const IDR = @intToPtr(*volatile u32, base + 0x08);
+        // Port output
+        const ODR = @intToPtr(*volatile u32, base + 0x0c);
 
+        pub fn read() u16 {
+            return @truncate(u16, IDR.*);
+        }
+
+        pub fn write(val: u16) void {
+            ODR.* = @as(u32, val);
+        }
+    };
+}
+
+export fn main() void {
     while (true) {
-        // Read the LED state
-        const leds_state = regs.GPIOC.ODR.read();
-        // Set the LED output to the negation of the currrent output
-        regs.GPIOC.ODR.modify(.{ .ODR13 = ~leds_state.ODR13, });
-
+        const GPIOC = GPIO(GPIO_PORT_C_BASE);
+        // Toggle LED (PC13)
+        GPIOC.write(GPIOC.read() ^ (1<<13));
         // Sleep for some time
-        var i: u32 = 0;
-        while (i < 600000) : (i +%= 1) {
+        var i: usize = 0;
+        while (i < 600000) : (i += 1) {
             asm volatile ("nop");
         }
     }

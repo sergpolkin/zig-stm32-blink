@@ -1,4 +1,4 @@
-usingnamespace @import("main.zig");
+extern fn main() noreturn;
 
 // These symbols come from the linker script
 extern const _data_loadaddr: u32;
@@ -19,6 +19,8 @@ export fn resetHandler() void {
     const bss_size = @ptrToInt(&_ebss) - @ptrToInt(&_bss);
     for (bss[0..bss_size]) |*b| b.* = 0;
 
-    // Call main imported from main.zig
+    // Call main function
     main();
+
+    unreachable;
 }

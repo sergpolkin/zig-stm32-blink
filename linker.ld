@@ -21,7 +21,6 @@
  * This is a generic linker script for Cortex-M targets using libopencm3.
  *
  * Memory regions MUST be defined in the ld script which includes this one!
- * Example:
  */
 
 MEMORY
@@ -131,4 +130,3 @@ SECTIONS
 }
 
 PROVIDE(_stack = ORIGIN(ram) + LENGTH(ram));
-
